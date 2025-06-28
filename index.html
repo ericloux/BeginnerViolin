@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beginner Violin</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    canvas {
+      border: 2px solid #333;
+      background-color: white;
+    }
+  </style>
+</head>
+<body>
+	<div class="container">
+		<canvas id="myCanvas" width="650" height="600"></canvas>
+		<div> 
+				<label><input type="radio" name="lesson" value="L1" checked> 1. Open string note names</label><br>
+				<label><input type="radio" name="lesson" value="L2"> 2. Open or fingered?</label><br>
+				<label><input type="radio" name="lesson" value="L3"> 3. First position note names</label><br>
+				<label><input type="radio" name="lesson" value="L4"> 4. How many fingers?</label><br>
+		</div>
+		<button id="toggleButton" onclick="updateDisplay()" autofocus>Next notes</button>
+	</div>
+  <script>
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+	var pitch = 0
+
+	function drawClef(type) {
+	
+		if (type == "treble") {
+			ctx.beginPath();
+			ctx.moveTo(50, 425)
+			ctx.arc(50, 425, 8, 0, Math.PI * 2);
+			ctx.fill();
+			
+			ctx.beginPath()
+			ctx.moveTo(45, 430)
+			ctx.bezierCurveTo(35, 425, 125, 525, 75, 125)
+			ctx.bezierCurveTo(105, 120, 105, 165, 50, 275)
+			ctx.bezierCurveTo(25, 325, 50, 375, 90, 375)
+			ctx.bezierCurveTo(175, 350, 75, 200, 65, 325)
+			ctx.stroke()
+		}
+	}
+
+	function drawLine(left, top, width, height) {
+		ctx.beginPath()
+		ctx.moveTo(left, top) 
+		ctx.lineTo(left + width, top + height)
+		ctx.stroke()
+	}
+	
+	function drawStaff() {
+		for (i = 0; i < 5; i++) {
+			drawLine(25, 175+i*50, 600, 0)
+		}	
+	}
+	
+	function drawHead(length, x) {
+	    ctx.beginPath();
+		if (pitch < 10) {
+			ctx.arc(x, 500-pitch*25, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
+		} else {
+			ctx.arc(x+25, 500-pitch*25, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
+		}
+		ctx.fill();
+	}
+	
+	function drawLedgerLines(pitch, x) {
+		if (pitch < 4) {
+			drawLine(x - 50, 425, 100, 0)
+			if (pitch < 2) {
+				drawLine(x - 50, 475, 100, 0)
+			}
+		} else if (pitch > 14) {
+			drawLine(x - 25, 125, 100, 0)
+		}
+	}
+	
+	function drawStem(pitch, x) {
+		if (pitch < 10) {
+			drawLine(x + 24, 500-pitch*25, 0, -175)
+		} else {
+			drawLine(x + 1, 500-pitch*25, 0, 175)
+		}
+	}
+	function drawNote(length, pitch, x) {
+		drawHead(length, x)
+		drawStem(pitch, x)
+		drawLedgerLines(pitch, x)
+	}
+	
+	function drawOpenOrFingered(pitch, x){
+		draw_x = x
+		let draw_y
+		
+		ctx.beginPath();
+		if (pitch < 10) {
+			draw_y = 562.5-pitch*25
+			ctx.arc(draw_x, draw_y, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
+		} else {
+			draw_x += 25
+			draw_y = 437.5-pitch*25
+			ctx.arc(draw_x, draw_y, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
+		}
+		
+		if (pitch % 4 == 0 && pitch < 16) {
+			ctx.fillStyle = 'green';
+			ctx.fill()
+			ctx.fillStyle = 'black';
+			ctx.fillText("O", draw_x, draw_y+2.5) 
+		} else {
+			ctx.fillStyle = 'red';
+			ctx.fill()
+			ctx.fillStyle = 'black';
+			ctx.fillText("X", draw_x, draw_y+2.5) 
+		}
+		ctx.strokeStyle = 'black';
+		ctx.stroke();
+	
+	}
+	
+	function drawPitchName(pitch, x) {
+		draw_x = x
+		let draw_y
+		
+		ctx.beginPath();
+		if (pitch < 10) {
+			draw_y = 562.5-pitch*25
+			ctx.arc(draw_x, draw_y, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
+		} else {
+			draw_x += 25
+			draw_y = 437.5-pitch*25
+			ctx.arc(draw_x, draw_y, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
+		}
+		
+		ctx.fillStyle = 'white';
+		ctx.fill()
+		ctx.strokeStyle = 'black';
+		ctx.stroke();
+	
+		ctx.fillStyle = 'black';
+		ctx.fillText(String.fromCharCode((pitch + 6) % 7 + 65), draw_x, draw_y+2.5) 
+	}
+	
+	function drawFingersName(pitch, x) {
+		draw_x = x
+		let draw_y
+		
+		ctx.beginPath();
+		if (pitch < 10) {
+			draw_y = 562.5-pitch*25
+			ctx.arc(draw_x, draw_y, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
+		} else {
+			draw_x += 25
+			draw_y = 437.5-pitch*25
+			ctx.arc(draw_x, draw_y, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
+		}
+		
+		ctx.fillStyle = 'white';
+		ctx.fill()
+		
+		if (pitch < 16) {
+			ctx.fillStyle = 'black';
+			ctx.fillText(pitch % 4, draw_x, draw_y+2.5) 
+		} else {
+			ctx.fillStyle = 'black';
+			ctx.fillText("4", draw_x, draw_y+2.5) 
+		}
+		ctx.strokeStyle = 'black';
+		ctx.stroke();
+	}
+	
+	function updateDisplay() {
+		button = document.getElementById("toggleButton")
+		
+		if (button.textContent == "Next notes") {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.strokeStyle = 'black';
+			drawClef("treble")
+			drawStaff()
+			for (i = 0; i < 4; i++) {
+				pitches[i] = choosePitch() 
+				drawNote(0, pitches[i], 225 + i * 100)
+			}
+			button.textContent = "Show answers"
+		} else {
+			lesson = document.querySelector('input[name="lesson"]:checked').value
+			for (i = 0; i < 4; i++) {
+				switch (lesson) {
+				case "L1":
+				case "L3":
+					drawPitchName(pitches[i], 225 + i * 100)
+					break
+				case "L2":
+					drawOpenOrFingered(pitches[i], 225 + i * 100)
+					break
+				case "L4":
+					drawFingersName(pitches[i], 225 + i * 100)
+					break
+				}
+			}
+			button.textContent = "Next notes"
+		}
+	}
+		
+	function choosePitch() {
+		lesson = document.querySelector('input[name="lesson"]:checked').value
+		if (lesson == "L2") {
+			pitch = 4 * Math.floor(Math.random()*4)
+			if (Math.random() < .5) {
+				pitch += Math.floor(Math.random()*4)
+			}
+		} else if (lesson != "L1") {
+			pitch = Math.floor(Math.random()*17)
+		} else {
+			pitch = 4 * Math.floor(Math.random()*4)
+		} 
+		return pitch
+	}
+	
+	canvas.addEventListener('click', function(event) {
+		updateDisplay()
+	});
+
+	
+	document.querySelectorAll('input[name="lesson"]').forEach(radio => {
+		radio.addEventListener('change', () => {
+			document.getElementById("toggleButton").textContent = "Next notes"
+			updateDisplay()
+		});
+	});
+
+	ctx.lineWidth = 2;
+	ctx.strokeStyle = 'black';
+	
+	ctx.font = '32px sans-serif';  // medium-large font
+	ctx.textAlign = 'center';      // horizontally center at x
+	ctx.textBaseline = 'middle';   // vertically center at y
+	pitches = new Array(4)
+	
+	updateDisplay()
+	
+  </script>
+</body>
+</html>
