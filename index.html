@@ -29,6 +29,7 @@
 		margin-bottom: 0.5em;    /* Adds spacing between options */
 		cursor: pointer;         /* Makes labels clickable */
 	}
+	
 	button {
 		font-size: 1.5rem;       /* Larger text */
 		display: block;          /* Ensures each is on its own line */
@@ -46,7 +47,7 @@
 				<label><input type="radio" name="lesson" value="L3"> 3. First position note names</label>
 				<label><input type="radio" name="lesson" value="L4"> 4. How many fingers?</label>
 		</div>
-		<button id="toggleButton" onclick="updateDisplay()" autofocus>Next notes</button>
+		<button id="toggleButton" onclick="updateDisplay()">Next notes</button>
 		<button id="modeButton" onclick="changeMode()">Change mode</button>
 		<p><i>Clicking on the staff also works!</i></p>
 	</div>
@@ -432,7 +433,6 @@
 	}
 	
 	updateDisplay()
-	
   </script>
 </body>
 </html>
