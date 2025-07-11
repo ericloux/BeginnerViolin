@@ -40,7 +40,8 @@
 </head>
 <body>
 	<div class="container">
-		<canvas id="myCanvas" width="650" height="600"></canvas>
+		<canvas id="staff-view" width="650" height="600"></canvas>
+		<canvas id="guess-panel" width="650" height="100" style="display:block"></canvas>
 		<div> 
 				<label><input type="radio" name="lesson" value="L1" checked> 1. Open string note names</label>
 				<label><input type="radio" name="lesson" value="L2"> 2. Open or fingered?</label>
@@ -48,12 +49,16 @@
 				<label><input type="radio" name="lesson" value="L4"> 4. How many fingers?</label>
 		</div>
 		<button id="toggleButton" onclick="updateDisplay()" autofocus>Next notes</button>
+		<button id="modeButton" onclick="changeMode()">Change mode</button>
 		<p><i>Clicking on the staff also works!</i></p>
 	</div>
   <script>
-    const canvas = document.getElementById('myCanvas');
+    const canvas = document.getElementById('staff-view');
+	const guess_panel = document.getElementById('guess-panel');
     const ctx = canvas.getContext('2d');
-	var pitch = 0
+	const gctx = guess_panel.getContext('2d');
+	var mode = 0
+	var user_guess
 
 	function drawClef(type) {
 	
@@ -120,7 +125,7 @@
 		drawLedgerLines(pitch, x)
 	}
 	
-	function drawOpenOrFingered(pitch, x){
+	function drawOpenOrFingered(pitch, x, fill = 'white'){
 		draw_x = x
 		let draw_y
 		
@@ -133,24 +138,22 @@
 			draw_y = 437.5-pitch*25
 			ctx.arc(draw_x, draw_y, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
 		}
+				
+		ctx.fillStyle = fill;
+		ctx.fill()
+		ctx.fillStyle = 'black';
 		
 		if (pitch % 4 == 0 && pitch < 16) {
-			ctx.fillStyle = 'green';
-			ctx.fill()
-			ctx.fillStyle = 'black';
 			ctx.fillText("O", draw_x, draw_y+2.5) 
 		} else {
-			ctx.fillStyle = 'red';
-			ctx.fill()
-			ctx.fillStyle = 'black';
-			ctx.fillText("X", draw_x, draw_y+2.5) 
+			ctx.fillText("F", draw_x, draw_y+2.5) 
 		}
 		ctx.strokeStyle = 'black';
 		ctx.stroke();
 	
 	}
 	
-	function drawPitchName(pitch, x) {
+	function drawPitchName(pitch, x, fill = 'white') {
 		draw_x = x
 		let draw_y
 		
@@ -164,7 +167,7 @@
 			ctx.arc(draw_x, draw_y, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
 		}
 		
-		ctx.fillStyle = 'white';
+		ctx.fillStyle = fill;
 		ctx.fill()
 		ctx.strokeStyle = 'black';
 		ctx.stroke();
@@ -173,7 +176,7 @@
 		ctx.fillText(String.fromCharCode((pitch + 6) % 7 + 65), draw_x, draw_y+2.5) 
 	}
 	
-	function drawFingersName(pitch, x) {
+	function drawFingersName(pitch, x, fill = "white") {
 		draw_x = x
 		let draw_y
 		
@@ -187,54 +190,169 @@
 			ctx.arc(draw_x, draw_y, 25, 0, Math.PI * 2); // x, y, radius, startAngle, endAngle
 		}
 		
-		ctx.fillStyle = 'white';
+		ctx.fillStyle = fill;
 		ctx.fill()
+		ctx.fillStyle = 'black';
 		
-		if (pitch < 16) {
-			ctx.fillStyle = 'black';
-			ctx.fillText(pitch % 4, draw_x, draw_y+2.5) 
+		if (user_guess == 4) {
+			if (pitch == 0) {
+				ctx.fillText("0", draw_x, draw_y+2.5) 
+			} else if (pitch % 4 != 0) {
+				ctx.fillText(pitch % 4, draw_x, draw_y+2.5) 
+			} else {
+				ctx.fillText("4", draw_x, draw_y+2.5) 
+			}
 		} else {
-			ctx.fillStyle = 'black';
-			ctx.fillText("4", draw_x, draw_y+2.5) 
+			if (pitch < 16) {
+				ctx.fillText(pitch % 4, draw_x, draw_y+2.5) 
+			} else {
+				ctx.fillText("4", draw_x, draw_y+2.5) 
+			}
 		}
 		ctx.strokeStyle = 'black';
 		ctx.stroke();
 	}
 	
-	function updateDisplay() {
-		button = document.getElementById("toggleButton")
+	function drawGuessPitchNames() {
+		for (i = 1; i < 7; i++) {
+			gctx.beginPath()
+			gctx.moveTo(i*92.85, 0) 
+			gctx.lineTo(i*92.85, 105)
+			gctx.stroke()
+		}
 		
-		if (button.textContent == "Next notes") {
+		for (i = 0; i < 7; i++) {
+			gctx.fillText(String.fromCharCode(i+65), i*92.85 + 46.43, 50)
+		}
+	}
+	
+	function drawGuessOpenOrFingered() {
+		gctx.beginPath()
+		gctx.moveTo(325, 0) 
+		gctx.lineTo(325, 105)
+		gctx.stroke()
+		gctx.fillText("Open", 162.5, 50)
+		gctx.fillText("Fingered", 487.5, 50)
+	}
+	
+	function drawGuessFingers() {
+		for (i = 1; i < 5; i++) {
+			gctx.beginPath()
+			gctx.moveTo(i*130, 0) 
+			gctx.lineTo(i*130, 105)
+			gctx.stroke()
+		}
+		
+		for (i = 0; i < 5; i++) {
+			gctx.fillText(i, i*130 + 65, 50)
+		}
+	}
+	
+	function drawGuessPanel() {
+		lesson = document.querySelector('input[name="lesson"]:checked').value
+		
+		gctx.clearRect(0, 0, canvas.width, canvas.height);
+		
+		switch (lesson) {
+		case "L1":
+		case "L3":
+			drawGuessPitchNames()
+			break
+		case "L2":
+			drawGuessOpenOrFingered()
+			break
+		case "L4":
+			drawGuessFingers()
+			break
+		}
+	}
+	
+	function updateDisplay() {
+		if (mode == 0) drawGuessPanel()
+	
+		button = document.getElementById("toggleButton")
+		if (button.textContent[0] == "N") {
+			user_guess = ""
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.strokeStyle = 'black';
 			drawClef("treble")
 			drawStaff()
-			for (i = 0; i < 4; i++) {
-				pitches[i] = choosePitch() 
-				drawNote(0, pitches[i], 225 + i * 100)
+			if (mode == 1) {
+				for (i = 0; i < 4; i++) {
+					pitches[i] = choosePitch(pitches[0], i == 0 ? -1 : pitches[i-1]) 
+					drawNote(0, pitches[i], 225 + i * 100)
+				}
+				button.textContent = "Show answers"
+			} else {
+				pitches[0] = choosePitch(pitches[0])
+				drawNote(0, pitches[0], 375)
+				button.textContent = "Show answer"
 			}
-			button.textContent = "Show answers"
 		} else {
 			lesson = document.querySelector('input[name="lesson"]:checked').value
-			for (i = 0; i < 4; i++) {
+			if (mode == 1) {
+				for (i = 0; i < 4; i++) {
+					switch (lesson) {
+					case "L1":
+					case "L3":
+						drawPitchName(pitches[i], 225 + i * 100)
+						break
+					case "L2":
+						drawOpenOrFingered(pitches[i], 225 + i * 100)
+						break
+					case "L4":
+						drawFingersName(pitches[i], 225 + i * 100)
+						break
+					}
+				}
+				button.textContent = "Next notes"
+			} else {
+				fill_color = "red"
 				switch (lesson) {
 				case "L1":
 				case "L3":
-					drawPitchName(pitches[i], 225 + i * 100)
+					if (user_guess == String.fromCharCode((pitches[0] + 6) % 7 + 65)) fill_color = "green"
+					drawPitchName(pitches[0], 375, fill_color)
 					break
 				case "L2":
-					drawOpenOrFingered(pitches[i], 225 + i * 100)
+					if (pitches[0] % 4 == 0 && pitches[0] < 16 && user_guess == "O") fill_color = "green"
+					if ((pitches[0] % 4 != 0 || pitches[0] == 16) && user_guess == "F") fill_color = "green"
+
+					drawOpenOrFingered(pitches[0], 375, fill_color)
 					break
 				case "L4":
-					drawFingersName(pitches[i], 225 + i * 100)
+					if (pitches[0] == 0) {
+						if (user_guess == 0) {
+							fill_color = "green"
+						}
+					} else if (pitches[0] == 16) {
+						if (user_guess == 4) {
+							fill_color = "green"
+						}
+					} else if (pitches[0] % 4 == user_guess % 4) {
+						fill_color = "green"
+					}
+					drawFingersName(pitches[0], 375, fill_color)
 					break
 				}
+				button.textContent = "Next note"
 			}
-			button.textContent = "Next notes"
 		}
 	}
+	
+	function changeMode() {
+		if (mode == 0) {
+			mode = 1
+			guess_panel.style.display = "none";
+		} else {
+			mode = 0
+			guess_panel.style.display = "block";
+		}
+		document.getElementById("toggleButton").textContent = "N"
+		updateDisplay()
+	}
 		
-	function choosePitch() {
+	function choosePitch(pitch_to_avoid = -1, other_pitch_to_avoid = -1) {
 		lesson = document.querySelector('input[name="lesson"]:checked').value
 		if (lesson == "L2") {
 			pitch = 4 * Math.floor(Math.random()*4)
@@ -246,10 +364,43 @@
 		} else {
 			pitch = 4 * Math.floor(Math.random()*4)
 		} 
+		if (pitch == pitch_to_avoid || pitch == other_pitch_to_avoid) {
+			choosePitch(pitch_to_avoid, other_pitch_to_avoid)
+		}
 		return pitch
 	}
 	
 	canvas.addEventListener('click', function(event) {
+		user_guess = ""
+		updateDisplay()
+	});
+	
+	guess_panel.addEventListener("click", function(event) {
+		if (button.textContent[0] == "S") {
+			click_x = event.clientX - guess_panel.getBoundingClientRect().left;
+			click_y = event.clientY - guess_panel.getBoundingClientRect().top;
+
+			console.log("Canvas clicked at:", click_x, click_y);
+			
+			lesson = document.querySelector('input[name="lesson"]:checked').value
+			switch (lesson) {
+			case "L1":
+			case "L3":
+				user_guess = String.fromCharCode(Math.floor(click_x/92.85) + 65)
+				break
+			case "L2":
+				if (click_x <= 325) { 
+					user_guess = "O"
+				} else {
+					user_guess = "F"
+				}
+				break
+			case "L4":
+				user_guess = Math.floor(click_x/130)
+				break
+			}
+			console.log(user_guess)
+		}
 		updateDisplay()
 	});
 
@@ -263,11 +414,24 @@
 
 	ctx.lineWidth = 2;
 	ctx.strokeStyle = 'black';
+	gctx.lineWidth = 2;
+	gctx.strokeStyle = 'black';
 	
 	ctx.font = '32px sans-serif';  // medium-large font
 	ctx.textAlign = 'center';      // horizontally center at x
 	ctx.textBaseline = 'middle';   // vertically center at y
-	pitches = new Array(4)
+	
+	gctx.font = '32px sans-serif';  // medium-large font
+	gctx.textAlign = 'center';      // horizontally center at x
+	gctx.textBaseline = 'middle';   // vertically center at y
+	
+	var pitches
+	
+	if (mode == 0) {
+		pitches = [-1]
+	} else {
+		pitches = [-1, -1, -1, -1]
+	}
 	
 	updateDisplay()
 	
